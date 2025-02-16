@@ -5,7 +5,7 @@ export type FormData = {
   firstName: string;
   middleName?: string;
   lastName: string;
-  egn?: number;
+  egn?: string;
   address: string;
   postcode: number;
   phoneNumber?: string;
@@ -47,53 +47,68 @@ export type ValidInputNames =
 
 const phoneRegex = new RegExp(/^\+00\d{9,16}$/);
 const nameRegex = new RegExp(/^[A-Za-z' -]+$/);
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isValidEgn(egn: string) {
-  if (!egn || egn.length !== 10) {
-    return false;
+  if (egn && egn.length > 1) {
+    if (egn.length !== 10) {
+      return false;
+    }
+    let monthBorn = Number(egn.substr(2, 2));
+    const dayBorn = Number(egn.substr(4, 2));
+    let yearFlag = 1900;
+
+    if (monthBorn > 40) {
+      yearFlag += 100;
+    } else if (monthBorn > 20) {
+      yearFlag -= 100;
+    }
+
+    monthBorn = (monthBorn % 20) - 1;
+
+    const dateBorn = new Date(
+      yearFlag + Number(egn.substr(0, 2)),
+      monthBorn,
+      dayBorn,
+      0,
+      0,
+      0
+    );
+
+    if (
+      egn.length !== 10 ||
+      new Date().getTime() < dateBorn.getTime() ||
+      dateBorn.getMonth() !== monthBorn ||
+      dateBorn.getDate() !== dayBorn
+    ) {
+      return false;
+    }
+
+    const flagNum = [2, 4, 8, 5, 10, 9, 7, 3, 6, 0];
+    let lastNum = 0;
+    let curNum;
+
+    for (let i = 0; i < flagNum.length; i += 1) {
+      curNum = Number(egn.substr(i, 1));
+
+      lastNum += flagNum[i] * curNum;
+    }
+    return (lastNum % 11) % 10 === curNum;
+  } else {
+    return true;
   }
-  let monthBorn = Number(egn.substr(2, 2));
-  const dayBorn = Number(egn.substr(4, 2));
-  let yearFlag = 1900;
-
-  if (monthBorn > 40) {
-    yearFlag += 100;
-  } else if (monthBorn > 20) {
-    yearFlag -= 100;
-  }
-
-  monthBorn = (monthBorn % 20) - 1;
-
-  const dateBorn = new Date(
-    yearFlag + Number(egn.substr(0, 2)),
-    monthBorn,
-    dayBorn,
-    0,
-    0,
-    0
-  );
-
-  if (
-    egn.length !== 10 ||
-    new Date().getTime() < dateBorn.getTime() ||
-    dateBorn.getMonth() !== monthBorn ||
-    dateBorn.getDate() !== dayBorn
-  ) {
-    return false;
-  }
-
-  const flagNum = [2, 4, 8, 5, 10, 9, 7, 3, 6, 0];
-  let lastNum = 0;
-  let curNum;
-
-  for (let i = 0; i < flagNum.length; i += 1) {
-    curNum = Number(egn.substr(i, 1));
-
-    lastNum += flagNum[i] * curNum;
-  }
-  return (lastNum % 11) % 10 === curNum;
 }
 
+function isValidPhoneNumber(phoneNumber: string) {
+  if (phoneNumber && phoneNumber.length > 1) {
+    return phoneRegex.test(phoneNumber);
+  } else {
+    return true;
+  }
+}
+function isValidEmail(emailAddress: string) {
+  return emailRegex.test(emailAddress);
+}
 export const IndividualSchema: ZodType<FormData> = z
   .object({
     firstName: z
@@ -126,13 +141,10 @@ export const IndividualSchema: ZodType<FormData> = z
       )
       .min(2, { message: 'Name is too short' })
       .max(64, { message: 'Name is too long' }),
-    egn: z.coerce
-      .number({
-        invalid_type_error: 'EGN must be a number',
-      })
-      .refine((val) => isValidEgn(`${val}`), 'EGN must be 10 digit long')
+    egn: z
+      .string()
       .optional()
-      .or(z.literal('')),
+      .refine((val) => isValidEgn(`${val}`), 'EGN must be 10 digit long'),
     address: z
       .string({
         required_error: 'Address is required',
@@ -150,27 +162,17 @@ export const IndividualSchema: ZodType<FormData> = z
       ),
     phoneNumber: z
       .string()
-      .regex(
-        phoneRegex,
+      .optional()
+      .refine(
+        (val) => isValidPhoneNumber(`${val}`),
         'Invalid number - must start with +00, followed by 9-16 digits.'
-      )
-      .or(z.literal('')),
+      ),
     emailAddress: z
       .string()
-      .email('This is not a valid email.')
-      .or(z.literal('')),
+      .optional()
+      .refine((val) => isValidEmail(`${val}`), 'This is not a valid email.'),
   })
-  .superRefine((values, ctx) => {
-    if (!values.phoneNumber && !values.emailAddress) {
-      ctx.addIssue({
-        message: 'Either phone or email should be filled in.',
-        code: z.ZodIssueCode.custom,
-        path: ['phoneNumber'],
-      });
-      ctx.addIssue({
-        message: 'Either phone or email should be filled in.',
-        code: z.ZodIssueCode.custom,
-        path: ['emailAddress'],
-      });
-    }
+  .refine((data) => data.phoneNumber || data.emailAddress, {
+    message: 'Either phone number or email address must be provided.',
+    path: ['emailAddress'],
   });

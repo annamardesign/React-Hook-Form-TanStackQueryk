@@ -13,17 +13,16 @@ function IndividualForm() {
     register,
     handleSubmit,
     formState: { errors },
-    setError,
     control,
     setFocus,
     reset,
   } = useForm<FormData>({
     resolver: zodResolver(IndividualSchema),
-    mode: 'onTouched',
+    mode: 'onChange',
   });
   const queryClient = useQueryClient();
   async function postCustomer(newData: CreateCustomer) {
-    return await axios.post('http://localhost:4000/formData', newData, {
+    return await axios.post('http://localhost:4000/api/customers', newData, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -36,6 +35,7 @@ function IndividualForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['formData'] });
       reset();
+      mutation.reset();
     },
     onError: (error) => {
       console.error('Error submitting form', error);
@@ -191,19 +191,25 @@ function IndividualForm() {
                 <Button
                   variant='contained'
                   type='submit'
-                  disabled={mutation.isLoading}
+                  disabled={mutation.status === 'pending'}
                   sx={{
                     maxWidth: '16rem',
                   }}
                 >
-                  {mutation.isLoading ? 'Submitting...' : 'Submit'}
+                  {mutation.status === 'pending' ? 'Submitting...' : 'Submit'}
                 </Button>
               </Typography>
             </Grid>
           </Grid>
         </form>
-        {mutation.isError && <p>Error: {mutation.error.message}</p>}
-        {mutation.isSuccess && <p>Form submitted successfully!</p>}
+        {mutation.isError && (
+          <Typography sx={{ mt: 2 }}>
+            Error: {mutation.error.message}
+          </Typography>
+        )}
+        {mutation.isSuccess && (
+          <Typography sx={{ mt: 2 }}>Form submitted successfully!</Typography>
+        )}
       </Paper>
     </>
   );
