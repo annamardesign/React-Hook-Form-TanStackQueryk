@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { IndividualSchema } from '../types.tsx';
+import { CreateCustomer, IndividualSchema } from '../types.tsx';
 import { zodResolver } from '@hookform/resolvers/zod';
 import '../App.css';
 import Input from '../components/Input.tsx';
@@ -22,7 +22,7 @@ function IndividualForm() {
     mode: 'onTouched',
   });
   const queryClient = useQueryClient();
-  async function postCustomer(newData: FormData) {
+  async function postCustomer(newData: CreateCustomer) {
     return await axios.post('http://localhost:4000/formData', newData, {
       headers: {
         Accept: 'application/json',
@@ -42,64 +42,19 @@ function IndividualForm() {
     },
   });
 
-  // const mutation = useMutation((newData: FormData) => {
-  //   return fetch('http://localhost:5173/formData', {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify(newData),
-  //   }).then((response) => {
-  //     if (!response.ok) {
-  //       throw new Error('Network response was not ok');
-  //     }
-  //     return response.json();
-  //   });
-  // });
-
   const onSubmitHandler = async (data: FormData) => {
-    console.log(`Submitted`);
-    data.type = 'INDIVIDUAL';
-    if (data.phoneNumber !== undefined) {
-      data.phoneNumber = data.phoneNumber.toString();
-    }
-    data.egn = data.egn.toString();
-    data.postcode = data.postcode.toString();
-    mutation.mutate(data);
-    console.table(data);
-    // try {
-    //   const response = await axios.post("/api/customers", data); // Make a POST request
-    //   const { errors = {} } = response.data; // Destructure the 'errors' property from the response data
-
-    //   // Define a mapping between server-side field names and their corresponding client-side names
-    //   const fieldErrorMapping: Record<string, ValidFieldNames> = {
-    //   firstName: 'firstName',
-    //   middleName: 'middleName',
-    //   lastName: 'lastName',
-    //   egn: 'egn',
-    //   address: 'address',
-    //   postcode: 'postcode',
-    //   phoneNumber: 'phoneNumber',
-    //   emailAddress: 'emailAddress',
-    //   };
-
-    //   // Find the first field with an error in the response data
-    //   const fieldWithError = Object.keys(fieldErrorMapping).find(
-    //     (field) => errors[field]
-    //   );
-
-    //   // If a field with an error is found, update the form error state using setError
-    //   if (fieldWithError) {
-    //     // Use the ValidFieldNames type to ensure the correct field names
-    //     setError(fieldErrorMapping[fieldWithError], {
-    //       type: "server",
-    //       message: errors[fieldWithError],
-    //     });
-    //   }
-    // } catch (error) {
-    //   alert("Submitting form failed!");
-    // }
-    // };
+    const customerData: CreateCustomer = {
+      type: 'INDIVIDUAL',
+      firstName: data.firstName,
+      middleName: data.middleName,
+      lastName: data.lastName,
+      egn: data.egn ? data.egn.toString() : '',
+      phoneNumber: data.phoneNumber ? data.phoneNumber.toString() : '',
+      emailAddress: data.emailAddress || '',
+      address: data.address,
+      postcode: data.postcode.toString(),
+    };
+    mutation.mutate(customerData);
   };
 
   const handleKeyDown = (event: {

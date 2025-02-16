@@ -2,15 +2,26 @@ import { FieldError, UseFormRegister } from 'react-hook-form';
 import { z, ZodType } from 'zod';
 
 export type FormData = {
-  type: string;
   firstName: string;
-  middleName: string;
+  middleName?: string;
   lastName: string;
-  egn: string;
+  egn?: number;
   address: string;
-  postcode: string;
-  phoneNumber: string | undefined;
-  emailAddress: string | undefined;
+  postcode: number;
+  phoneNumber?: string;
+  emailAddress?: string;
+};
+
+export type CreateCustomer = {
+  type: 'INDIVIDUAL';
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  egn?: string;
+  phoneNumber: string;
+  emailAddress: string;
+  address?: string;
+  postcode?: string;
 };
 
 export type InputProps = {
@@ -37,7 +48,7 @@ export type ValidInputNames =
 const phoneRegex = new RegExp(/^\+00\d{9,16}$/);
 const nameRegex = new RegExp(/^[A-Za-z' -]+$/);
 
-function isValidEgn(egn) {
+function isValidEgn(egn: string) {
   if (!egn || egn.length !== 10) {
     return false;
   }
