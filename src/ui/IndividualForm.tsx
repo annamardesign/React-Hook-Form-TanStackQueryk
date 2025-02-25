@@ -8,6 +8,7 @@ import { Box, Grid, Paper, Typography } from '@mui/material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { FormData } from '../types';
+import { useEffect } from 'react';
 
 function IndividualForm() {
   const {
@@ -17,10 +18,13 @@ function IndividualForm() {
     control,
     setFocus,
     reset,
+    clearErrors,
+    watch,
   } = useForm<FormData>({
     resolver: zodResolver(IndividualSchema),
     mode: 'onChange',
   });
+  const phone = watch('phoneNumber');
   const queryClient = useQueryClient();
   async function postCustomer(newData: CreateCustomer) {
     return await axios.post('http://localhost:4000/api/customers', newData, {
@@ -30,12 +34,19 @@ function IndividualForm() {
       },
     });
   }
+  useEffect(() => {
+    if ((phone?.length ?? 0) >= 10) {
+      clearErrors('emailAddress');
+    }
+  }, [errors, clearErrors, phone?.length]);
+
   const mutation = useMutation({
     mutationFn: postCustomer,
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['formData'] });
       reset();
+      clearErrors();
       setTimeout(() => {
         mutation.reset();
       }, 3000);

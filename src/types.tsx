@@ -50,7 +50,7 @@ const nameRegex = new RegExp(/^[A-Za-z' -]+$/);
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isValidEgn(egn: string) {
-  if (egn && egn.length > 1) {
+  if (egn && egn.length > 0) {
     if (egn.length !== 10) {
       return false;
     }
@@ -100,14 +100,18 @@ function isValidEgn(egn: string) {
 }
 
 function isValidPhoneNumber(phoneNumber: string) {
-  if (phoneNumber && phoneNumber.length > 1) {
+  if (phoneNumber && phoneNumber.length > 0) {
     return phoneRegex.test(phoneNumber);
   } else {
     return true;
   }
 }
 function isValidEmail(emailAddress: string) {
-  return emailRegex.test(emailAddress);
+  if (emailAddress && emailAddress.length > 0) {
+    return emailRegex.test(emailAddress);
+  } else {
+    return true;
+  }
 }
 export const IndividualSchema: ZodType<FormData> = z
   .object({
@@ -172,7 +176,12 @@ export const IndividualSchema: ZodType<FormData> = z
       .optional()
       .refine((val) => isValidEmail(`${val}`), 'This is not a valid email.'),
   })
-  .refine((data) => data.phoneNumber || data.emailAddress, {
-    message: 'Either phone number or email address must be provided.',
-    path: ['emailAddress'],
+  .superRefine((data, ctx) => {
+    if (!data.phoneNumber && !data.emailAddress) {
+      ctx.addIssue({
+        path: ['emailAddress'],
+        message: 'Either phone number or email address must be provided.',
+        code: z.ZodIssueCode.custom,
+      });
+    }
   });
