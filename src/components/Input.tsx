@@ -1,4 +1,4 @@
-import { InputProps } from '@/types';
+import { InputProps } from '../types';
 import { Grid } from '@mui/material';
 import TextField from '@mui/material/TextField/TextField';
 import { Controller } from 'react-hook-form';

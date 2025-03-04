@@ -1,4 +1,4 @@
-import { FieldError, UseFormRegister } from 'react-hook-form';
+import { FieldError, UseFormRegister, Control } from 'react-hook-form';
 import { z, ZodType } from 'zod';
 
 export type FormData = {
@@ -25,14 +25,16 @@ export type CreateCustomer = {
 };
 
 export type InputProps = {
-  type: object;
+  type: string;
   placeholder: string;
   label: string;
-  required: boolean;
+  required?: boolean;
   name: ValidInputNames;
   register: UseFormRegister<FormData>;
   error: FieldError | undefined;
   valueAsNumber?: boolean;
+  control: Control<FormData>;
+  setFocus: (name: ValidInputNames) => void;
 };
 
 export type ValidInputNames =
